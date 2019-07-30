@@ -88,7 +88,7 @@ def main():
     Run main script
     """
     #Create EIA API using your specific API key
-    api_key = 'd5c759bbe26b1a70f495e4aecadcf684'
+    api_key = 'YOUR API HERE'
     api = eia.API(api_key)
     
     #Pull the electricity price data
