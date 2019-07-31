@@ -7,6 +7,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV
 import numpy as np
 from sklearn.metrics import confusion_matrix, accuracy_score
+import pytz
 
 def retrieve_time_series(api, series_ID):
     """
@@ -88,7 +89,7 @@ def main():
     Run main script
     """
     #Create EIA API using your specific API key
-    api_key = 'YOUR API HERE'
+    api_key = 'API KEY HERE'
     api = eia.API(api_key)
     
     #Pull the electricity price data
@@ -105,6 +106,10 @@ def main():
     electricity_demand_df['Date_Time'] = electricity_demand_df['Date_Time'].str.replace('T' , ' ')
     #Convert the Date column into a date object
     electricity_demand_df['Date_Time']=pd.to_datetime(electricity_demand_df['Date_Time'], format='%Y %m%d %H')
+    #Convert from UTC to Central Standard Time
+    electricity_demand_df['Date_Time'] = electricity_demand_df['Date_Time'].dt.tz_localize('UTC')
+    electricity_demand_df['Date_Time'] = pd.to_datetime(electricity_demand_df['Date_Time'].dt.tz_convert('US/Central').dt.strftime("%Y-%m-%d %H:%M:%S"))
+
     #Plot the data on a yearly basis, using 2019 as an example year
     plot_data(df=electricity_demand_df[(electricity_demand_df['Date_Time']>=pd.to_datetime('2019-01-01')) &
                                     (electricity_demand_df['Date_Time']<pd.to_datetime('2020-01-01'))], 
@@ -122,7 +127,7 @@ def main():
                                     (electricity_demand_df['Date_Time']<pd.to_datetime('2019-07-07'))], 
                                     x_variable='Date_Time', 
                                     y_variable='Electricity_Demand_MWh', 
-                                    title='TX Electricity Demand: December 2017')
+                                    title='TX Electricity Demand: Monday-Sunday July 1-7, 2019')
     #Pull the hour into and individual column
     electricity_demand_df['Hour']=electricity_demand_df['Date_Time'].dt.hour
     #Pull the day of month for each reading
@@ -201,24 +206,32 @@ def main():
     grid_search_rf(parameter_grid, train_features, train_labels)
     """
     Grid Search Outputs:
-        Fitting 3 folds for each of 20 candidates, totalling 60 fits
+        Fitting 3 folds for each of 24 candidates, totalling 72 fits
         [Parallel(n_jobs=-1)]: Using backend LokyBackend with 4 concurrent workers.
-        [Parallel(n_jobs=-1)]: Done  33 tasks      | elapsed:  2.1min
-        [Parallel(n_jobs=-1)]: Done  60 out of  60 | elapsed:  3.7min finished
-        {'max_depth': 80, 'n_estimators': 1000}
+        [Parallel(n_jobs=-1)]: Done  33 tasks      | elapsed:   25.3s
+        [Parallel(n_jobs=-1)]: Done  72 out of  72 | elapsed:   54.0s finished
+        {'max_depth': 100, 'n_estimators': 1100}
     """
     #Plug in optimized model parameters into final RF model 
-    rf = RandomForestClassifier(n_estimators=1000, 
-                                max_depth=80,
-                                random_state = 1000)
+    rf = RandomForestClassifier(n_estimators=1100, 
+                                max_depth=100,
+                                random_state = 1500)
     #Fit the model 
     rf.fit(train_features, train_labels)
     # Use the forest's predict method on the test data
     print(confusion_matrix(test_labels, 
                            rf.predict(test_features),
-                           labels=['Hour 0', 'Hour 1',
-                                   'Hour 2', 'Hour 14',
-                                   'Hour 15', 'Hour 21', 'Hour 22', 'Hour 23']))
+                           labels=['Hour 8',
+                                   'Hour 9', 
+                                   'Hour 10', 
+                                   'Hour 14', 
+                                   'Hour 15', 
+                                   'Hour 16',
+                                   'Hour 17', 
+                                   'Hour 18',
+                                   'Hour 19',
+                                   'Hour 20',
+                                   'Hour 21']))
     accuracy_score(test_labels, rf.predict(test_features), normalize=True, sample_weight=None)
     #Obtain feature importances in the model
     feature_importances = pd.DataFrame(rf.feature_importances_,
