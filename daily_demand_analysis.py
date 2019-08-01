@@ -171,11 +171,9 @@ def main():
     peak_demand_hour_model=peak_demand_hour_df[['Peak_Demand_Hour',
                                                       'Day_Of_Week', 
                                                       'Week',
-                                                      'Month',
-                                                      'Year']]
+                                                      'Month']]
     #Convert the Week, Year, and Peak_Demand_Your variables into categoric string variables (from numeric)
     peak_demand_hour_model.loc[:,'Week']=peak_demand_hour_model['Week'].apply(str)
-    peak_demand_hour_model.loc[:,'Year']=peak_demand_hour_model['Year'].apply(str)
     peak_demand_hour_model.loc[:,'Peak_Demand_Hour']='Hour '+peak_demand_hour_model['Peak_Demand_Hour'].apply(str)
     #Pull the counts per peak demand hour category
     counts_by_category=pd.DataFrame(peak_demand_hour_model.groupby('Peak_Demand_Hour')['Peak_Demand_Hour'].count())
